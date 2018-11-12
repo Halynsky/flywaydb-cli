@@ -3,15 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.rmTmpDir = exports.makeBinLink = exports.extractTolib = exports.downloadFlywaySource = exports.getReleaseSource = undefined;
+exports.rmTmpDirs = exports.copyToBin = exports.extractToLib = exports.downloadFlywaySource = exports.getReleaseSource = undefined;
 
 var _os = require('os');
 
 var _os2 = _interopRequireDefault(_os);
 
-var _fs = require('fs');
+var _fsExtra = require('fs-extra');
 
-var _fs2 = _interopRequireDefault(_fs);
+var _fsExtra2 = _interopRequireDefault(_fsExtra);
 
 var _path = require('path');
 
@@ -95,11 +95,11 @@ const downloadFlywaySource = exports.downloadFlywaySource = source => {
   }
 
   source.filename = _path2.default.join(downloadDir, source.filename);
-  if (_fs2.default.existsSync(source.filename)) {
+  if (_fsExtra2.default.existsSync(source.filename)) {
     return Promise.resolve(source.filename);
   } else {
     (0, _rimraf2.default)(downloadDir, () => {
-      _fs2.default.mkdirSync(downloadDir);
+      _fsExtra2.default.mkdirSync(downloadDir);
     });
   }
 
@@ -122,7 +122,7 @@ const downloadFlywaySource = exports.downloadFlywaySource = source => {
 
     (0, _requestProgress2.default)((0, _request2.default)(downloadOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
-        _fs2.default.writeFileSync(source.filename, body);
+        _fsExtra2.default.writeFileSync(source.filename, body);
 
         console.log(`\nReceived ${(0, _filesize2.default)(body.length)} total.`);
 
@@ -160,11 +160,11 @@ const downloadFlywaySource = exports.downloadFlywaySource = source => {
  * @param {any} file
  * @returns extractDir
  */
-const extractTolib = exports.extractTolib = file => {
+const extractToLib = exports.extractToLib = file => {
   let extractDir = _path2.default.join(__dirname, '../../', 'lib');
 
-  if (!_fs2.default.existsSync(extractDir)) {
-    _fs2.default.mkdirSync(extractDir);
+  if (!_fsExtra2.default.existsSync(extractDir)) {
+    _fsExtra2.default.mkdirSync(extractDir);
   } else {
     return Promise.resolve(extractDir);
   }
@@ -201,21 +201,15 @@ const extractTolib = exports.extractTolib = file => {
  * @param {any} libDir
  * @returns
  */
-const makeBinLink = exports.makeBinLink = libDir => {
+const copyToBin = exports.copyToBin = libDir => {
   return new Promise((resolve, reject) => {
     let versionDirs = flywayVersionDir(libDir);
     let flywayDir = _path2.default.join(libDir, versionDirs[0]);
     let binDir = _path2.default.join(__dirname, '../../', 'bin');
 
-    if (_fs2.default.existsSync(flywayDir)) {
-      if (_fs2.default.existsSync(binDir)) {
-        _fs2.default.unlinkSync(_path2.default.join(binDir, 'flyway'));
-        _fs2.default.symlinkSync(_path2.default.join(flywayDir, 'flyway'), _path2.default.join(binDir, 'flyway'));
-      } else {
-        _fs2.default.mkdirSync(binDir);
-        _fs2.default.symlinkSync(_path2.default.join(flywayDir, 'flyway'), _path2.default.join(binDir, 'flyway'));
-      }
-
+    if (_fsExtra2.default.existsSync(flywayDir)) {
+      _fsExtra2.default.emptyDirSync(binDir);
+      _fsExtra2.default.copySync(flywayDir, binDir);
       resolve();
     } else {
       reject(new Error(`flywayDir was not found at ${flywayDir}`));
@@ -226,11 +220,9 @@ const makeBinLink = exports.makeBinLink = libDir => {
 /**
  * @param {any} libDir
  */
-const flywayVersionDir = libDir => _fs2.default.readdirSync(libDir).filter(file => _fs2.default.statSync(_path2.default.join(libDir, file)).isDirectory());
+const flywayVersionDir = libDir => _fsExtra2.default.readdirSync(libDir).filter(file => _fsExtra2.default.statSync(_path2.default.join(libDir, file)).isDirectory());
 
-const rmTmpDir = exports.rmTmpDir = () => {
-  let tmpDir = _path2.default.join(__dirname, '../../', 'tmp');
-  (0, _rimraf2.default)(tmpDir, () => {
-    console.log(`Deleted ${tmpDir}`);
-  });
+const rmTmpDirs = exports.rmTmpDirs = () => {
+  _rimraf2.default.sync(_path2.default.join(__dirname, '../../', 'tmp'));
+  _rimraf2.default.sync(_path2.default.join(__dirname, '../../', 'lib'));
 };
