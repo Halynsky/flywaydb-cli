@@ -1,5 +1,5 @@
 import os from 'os'
-import fs from 'fs'
+import fs from 'fs-extra'
 import path from 'path'
 import request from 'request'
 import rp from 'request-promise'
@@ -122,7 +122,7 @@ export const downloadFlywaySource = (source) => {
  * @param {any} file
  * @returns extractDir
  */
-export const extractTolib = (file) => {
+export const extractToLib = (file) => {
   let extractDir = path.join(__dirname, '../../', 'lib')
 
   if (!fs.existsSync(extractDir)) {
@@ -163,21 +163,15 @@ export const extractTolib = (file) => {
  * @param {any} libDir
  * @returns
  */
-export const makeBinLink = (libDir) => {
+export const copyToBin = (libDir) => {
   return new Promise((resolve, reject) => {
     let versionDirs = flywayVersionDir(libDir)
     let flywayDir = path.join(libDir, versionDirs[0])
     let binDir = path.join(__dirname, '../../', 'bin')
 
     if (fs.existsSync(flywayDir)) {
-      if (fs.existsSync(binDir)) {
-        fs.unlinkSync(path.join(binDir, 'flyway'))
-        fs.symlinkSync(path.join(flywayDir, 'flyway'), path.join(binDir, 'flyway'))
-      } else {
-        fs.mkdirSync(binDir)
-        fs.symlinkSync(path.join(flywayDir, 'flyway'), path.join(binDir, 'flyway'))
-      }
-
+      fs.emptyDirSync(binDir)
+      fs.copySync(flywayDir, binDir)
       resolve()
     } else {
       reject(new Error(`flywayDir was not found at ${flywayDir}`))
@@ -190,9 +184,7 @@ export const makeBinLink = (libDir) => {
  */
 const flywayVersionDir = (libDir) => fs.readdirSync(libDir).filter(file => fs.statSync(path.join(libDir, file)).isDirectory())
 
-export const rmTmpDir = () => {
-  let tmpDir = path.join(__dirname, '../../', 'tmp')
-  rimraf(tmpDir, () => {
-    console.log(`Deleted ${tmpDir}`)
-  })
+export const rmTmpDirs = () => {
+  rimraf.sync(path.join(__dirname, '../../', 'tmp'))
+  rimraf.sync(path.join(__dirname, '../../', 'lib'))
 }

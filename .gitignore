@@ -39,3 +39,11 @@ jspm_packages
 # Flyway source files
 lib
 tmp
+
+
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
